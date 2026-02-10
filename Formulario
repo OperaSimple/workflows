@@ -741,7 +741,7 @@
             if (!validateStep(3)) return;
             
             // ⚠️ CAMBIA ESTA URL por tu webhook de n8n
-            const WEBHOOK_URL = 'https://TU-DOMINIO-N8N.com/webhook/diagnostico-express';
+            const WEBHOOK_URL = 'https://n8n.operasimple.com/webhook/diagnostico-express';
             
             const payload = {
                 nombre: document.getElementById('nombre').value.trim(),
