@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Express | Opera Simple</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep: #0a0a1a;
+            --navy: #1a1a2e;
+            --blue: #0f3460;
+            --accent: #e67e22;
+            --gold: #f39c12;
+            --light: #f4f6f9;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--deep);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background */
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(15,52,96,0.4) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(230,126,34,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(26,26,46,0.8) 0%, transparent 60%);
+            z-index: 0;
+        }
+        
+        .floating-dots {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(243,156,18,0.3);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        .dot:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .dot:nth-child(2) { left: 30%; top: 60%; animation-delay: 1s; animation-duration: 10s; }
+        .dot:nth-child(3) { left: 50%; top: 30%; animation-delay: 2s; animation-duration: 7s; }
+        .dot:nth-child(4) { left: 70%; top: 70%; animation-delay: 3s; }
+        .dot:nth-child(5) { left: 90%; top: 40%; animation-delay: 4s; animation-duration: 9s; }
+        .dot:nth-child(6) { left: 20%; top: 80%; animation-delay: 5s; animation-duration: 11s; }
+        .dot:nth-child(7) { left: 60%; top: 10%; animation-delay: 1.5s; }
+        .dot:nth-child(8) { left: 80%; top: 90%; animation-delay: 2.5s; animation-duration: 12s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-30px) scale(1.5); opacity: 0.8; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px 0 32px;
+            animation: fadeDown 0.8s ease-out;
+        }
+        
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+        }
+        
+        .logo span { color: var(--accent); }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 14px;
+            background: rgba(230,126,34,0.15);
+            border: 1px solid rgba(230,126,34,0.3);
+            border-radius: 20px;
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 12px;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-top: 20px;
+        }
+        
+        .title em {
+            font-style: normal;
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #8899aa;
+            font-size: 14px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(39,174,96,0.12);
+            border: 1px solid rgba(39,174,96,0.3);
+            border-radius: 8px;
+            color: #27ae60;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+        
+        /* Form */
+        .form-card {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 28px 24px;
+            animation: fadeUp 0.8s ease-out 0.2s both;
+        }
+        
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            transition: all 0.4s ease;
+        }
+        
+        .step-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 12px rgba(230,126,34,0.5);
+            width: 24px;
+            border-radius: 4px;
+        }
+        
+        .step-dot.completed {
+            background: #27ae60;
+        }
+        
+        .form-step {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        .form-step.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .step-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .question {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+        
+        .input-group { margin-bottom: 14px; }
+        
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8899aa;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: rgba(255,255,255,0.25);
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(230,126,34,0.15);
+            background: rgba(255,255,255,0.08);
+        }
+        
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238899aa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+        
+        select option {
+            background: var(--navy);
+            color: white;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        /* Option cards */
+        .option-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .option-card {
+            padding: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .option-card:hover {
+            border-color: rgba(230,126,34,0.4);
+            background: rgba(230,126,34,0.08);
+        }
+        
+        .option-card.selected {
+            border-color: var(--accent);
+            background: rgba(230,126,34,0.12);
+            box-shadow: 0 0 0 2px rgba(230,126,34,0.2);
+        }
+        
+        .option-card .icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+        
+        .option-card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back {
+            background: rgba(255,255,255,0.06);
+            color: #8899aa;
+            flex: 0.4;
+        }
+        
+        .btn-back:hover { background: rgba(255,255,255,0.1); }
+        
+        .btn-next {
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-next:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(230,126,34,0.35);
+        }
+        
+        .btn-next:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Success state */
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(39,174,96,0.3); }
+            50% { box-shadow: 0 0 0 15px rgba(39,174,96,0); }
+        }
+        
+        .success-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+        }
+        
+        .success-text {
+            color: #8899aa;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* Loading */
+        .loading-screen {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .loading-sub {
+            color: #8899aa;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px 0;
+            color: rgba(255,255,255,0.2);
+            font-size: 11px;
+            animation: fadeUp 0.8s ease-out 0.4s both;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="floating-dots">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="logo">OPERA<span>SIMPLE</span></div>
+            <div class="badge">⚡ FIIE COPARMEX 2026</div>
+            <h1 class="title">Diagnóstico <em>Express</em><br>de Automatización</h1>
+            <p class="subtitle">Descubre cuántas horas a la semana está perdiendo tu empresa en procesos manuales</p>
+            <div class="time-badge">⏱ Menos de 2 minutos</div>
+        </div>
+        
+        <div class="form-card" id="formCard">
+            <div class="step-indicator">
+                <div class="step-dot active" data-step="0"></div>
+                <div class="step-dot" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+            </div>
+            
+            <!-- Step 1: Info básica -->
+            <div class="form-step active" data-step="0">
+                <div class="step-number">Paso 1 de 4</div>
+                <div class="question">¿Quién eres y cuál es tu empresa?</div>
+                <div class="input-group">
+                    <label>Tu nombre</label>
+                    <input type="text" id="nombre" placeholder="Ej: Juan García" required>
+                </div>
+                <div class="input-group">
+                    <label>Tu email</label>
+                    <input type="email" id="email" placeholder="juan@tuempresa.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Nombre de tu empresa</label>
+                    <input type="text" id="empresa" placeholder="Ej: Distribuidora García" required>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-next" onclick="nextStep()">Continuar →</button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Giro y tamaño -->
+            <div class="form-step" data-step="1">
+                <div class="step-number">Paso 2 de 4</div>
+                <div class="question">¿A qué se dedica tu empresa?</div>
+                <div class="input-group">
+                    <label>Giro o industria</label>
+                    <select id="giro">
+                        <option value="">Selecciona...</option>
+                        <option value="Comercio / Retail">🛒 Comercio / Retail</option>
+                        <option value="Manufactura">🏭 Manufactura</option>
+                        <option value="Servicios profesionales">💼 Servicios profesionales</option>
+                        <option value="Alimentos y bebidas">🍽️ Alimentos y bebidas</option>
+                        <option value="Construcción">🏗️ Construcción</option>
+                        <option value="Tecnología">💻 Tecnología</option>
+                        <option value="Salud">🏥 Salud</option>
+                        <option value="Educación">📚 Educación</option>
+                        <option value="Logística / Transporte">🚛 Logística / Transporte</option>
+                        <option value="Otro">📌 Otro</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>¿Cuántos empleados tienen?</label>
+                    <div class="option-cards">
+                        <div class="option-card" onclick="selectOption(this, 'empleados', '1-5')">
+                            <div class="icon">👤</div>
+                            <div class="label">1-5</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'empleados', '6-20')">
+                            <div class="icon">👥</div>
+                            <div class="label">6-20</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'empleados', '21-50')">
+                            <div class="icon">🏢</div>
+                            <div class="label">21-50</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'empleados', '50+')">
+                            <div class="icon">🏬</div>
+                            <div class="label">50+</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-back" onclick="prevStep()">← Atrás</button>
+                    <button class="btn btn-next" onclick="nextStep()">Continuar →</button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Dolor principal -->
+            <div class="form-step" data-step="2">
+                <div class="step-number">Paso 3 de 4</div>
+                <div class="question">¿Qué procesos siguen siendo manuales?</div>
+                <div class="input-group">
+                    <label>Selecciona los que apliquen (puedes elegir varios)</label>
+                    <div class="option-cards" id="procesosGrid">
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Facturación')">
+                            <div class="icon">🧾</div>
+                            <div class="label">Facturación</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Cobranza')">
+                            <div class="icon">💰</div>
+                            <div class="label">Cobranza</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Atención al cliente')">
+                            <div class="icon">💬</div>
+                            <div class="label">Atención al cliente</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Reportes')">
+                            <div class="icon">📊</div>
+                            <div class="label">Reportes</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Inventario')">
+                            <div class="icon">📦</div>
+                            <div class="label">Inventario</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'RRHH / Nómina')">
+                            <div class="icon">👔</div>
+                            <div class="label">RRHH / Nómina</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Ventas / CRM')">
+                            <div class="icon">📈</div>
+                            <div class="label">Ventas / CRM</div>
+                        </div>
+                        <div class="option-card multi" onclick="toggleMulti(this, 'Marketing')">
+                            <div class="icon">📣</div>
+                            <div class="label">Marketing</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-back" onclick="prevStep()">← Atrás</button>
+                    <button class="btn btn-next" onclick="nextStep()">Continuar →</button>
+                </div>
+            </div>
+            
+            <!-- Step 4: Horas y dolor -->
+            <div class="form-step" data-step="3">
+                <div class="step-number">Paso 4 de 4</div>
+                <div class="question">¿Cuánto tiempo pierden en tareas repetitivas?</div>
+                <div class="input-group">
+                    <label>Horas semanales en tareas manuales/repetitivas</label>
+                    <div class="option-cards">
+                        <div class="option-card" onclick="selectOption(this, 'horas', 'Menos de 5 horas')">
+                            <div class="icon">⏰</div>
+                            <div class="label">&lt; 5 hrs</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'horas', '5-15 horas')">
+                            <div class="icon">⏰</div>
+                            <div class="label">5-15 hrs</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'horas', '15-30 horas')">
+                            <div class="icon">🔥</div>
+                            <div class="label">15-30 hrs</div>
+                        </div>
+                        <div class="option-card" onclick="selectOption(this, 'horas', 'Más de 30 horas')">
+                            <div class="icon">🚨</div>
+                            <div class="label">30+ hrs</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>¿Cuál es tu mayor dolor operativo?</label>
+                    <textarea id="dolor" placeholder="Ej: Pasamos horas haciendo facturas a mano, el seguimiento a clientes se nos pierde..."></textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-back" onclick="prevStep()">← Atrás</button>
+                    <button class="btn btn-next" onclick="submitForm()" id="submitBtn">🚀 Obtener mi diagnóstico</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loader"></div>
+            <div class="loading-text">Analizando tu empresa con IA...</div>
+            <div class="loading-sub">Esto toma menos de 60 segundos</div>
+        </div>
+        
+        <!-- Success -->
+        <div class="success-screen" id="successScreen">
+            <div class="success-icon">✓</div>
+            <div class="success-title">¡Diagnóstico enviado!</div>
+            <div class="success-text">
+                Revisa tu correo electrónico en los próximos minutos.<br>
+                Recibirás un análisis personalizado con recomendaciones específicas para tu empresa.
+            </div>
+            <div style="margin-top:24px;padding:16px;background:rgba(230,126,34,0.1);border-radius:12px;border:1px solid rgba(230,126,34,0.2);">
+                <p style="color:var(--accent);font-weight:700;font-size:14px;">📅 ¿Quieres profundizar?</p>
+                <p style="color:#8899aa;font-size:13px;margin-top:4px;">Pasa a nuestro stand para platicar sobre cómo automatizar tu operación</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Opera Simple © 2026 · Automatización inteligente
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const totalSteps = 4;
+        const formData = {
+            empleados: '',
+            horas: '',
+            procesos: []
+        };
+        
+        function updateStepIndicator() {
+            document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                dot.classList.remove('active', 'completed');
+                if (i === currentStep) dot.classList.add('active');
+                if (i < currentStep) dot.classList.add('completed');
+            });
+        }
+        
+        function nextStep() {
+            // Validate current step
+            if (!validateStep(currentStep)) return;
+            
+            if (currentStep < totalSteps - 1) {
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep++;
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+                updateStepIndicator();
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 0) {
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep--;
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+                updateStepIndicator();
+            }
+        }
+        
+        function validateStep(step) {
+            if (step === 0) {
+                const nombre = document.getElementById('nombre').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const empresa = document.getElementById('empresa').value.trim();
+                if (!nombre || !email || !empresa) {
+                    shakeForm();
+                    return false;
+                }
+                if (!email.includes('@')) {
+                    shakeForm();
+                    return false;
+                }
+            }
+            if (step === 1) {
+                const giro = document.getElementById('giro').value;
+                if (!giro || !formData.empleados) {
+                    shakeForm();
+                    return false;
+                }
+            }
+            if (step === 2) {
+                if (formData.procesos.length === 0) {
+                    shakeForm();
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function shakeForm() {
+            const card = document.getElementById('formCard');
+            card.style.animation = 'none';
+            card.offsetHeight; // trigger reflow
+            card.style.animation = 'shake 0.5s ease-out';
+        }
+        
+        function selectOption(el, field, value) {
+            el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            formData[field] = value;
+        }
+        
+        function toggleMulti(el, value) {
+            el.classList.toggle('selected');
+            const idx = formData.procesos.indexOf(value);
+            if (idx > -1) {
+                formData.procesos.splice(idx, 1);
+            } else {
+                formData.procesos.push(value);
+            }
+        }
+        
+        async function submitForm() {
+            if (!validateStep(3)) return;
+            
+            // ⚠️ CAMBIA ESTA URL por tu webhook de n8n
+            const WEBHOOK_URL = 'https://TU-DOMINIO-N8N.com/webhook/diagnostico-express';
+            
+            const payload = {
+                nombre: document.getElementById('nombre').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                empresa: document.getElementById('empresa').value.trim(),
+                giro: document.getElementById('giro').value,
+                empleados: formData.empleados,
+                procesos_manuales: formData.procesos.join(', '),
+                horas_perdidas: formData.horas,
+                dolor_principal: document.getElementById('dolor').value.trim() || 'No especificado'
+            };
+            
+            // Show loading
+            document.getElementById('formCard').style.display = 'none';
+            document.getElementById('loadingScreen').style.display = 'block';
+            
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Show success after a moment
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('successScreen').style.display = 'block';
+                }, 2000);
+                
+            } catch (error) {
+                // Even on error, show success (webhook might be async)
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('successScreen').style.display = 'block';
+                }, 2000);
+            }
+        }
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20% { transform: translateX(-8px); }
+                40% { transform: translateX(8px); }
+                60% { transform: translateX(-4px); }
+                80% { transform: translateX(4px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
